@@ -1,7 +1,6 @@
 
-
 let BrandController = {
-
+  
   create: async (req, res) => {
 
     if (req.method === "GET") {
@@ -9,27 +8,35 @@ let BrandController = {
         pageName: "brands"
       });
     }
-
+    var domain = "http://test/upload/";
     var brandData = req.body;
     // console.log(brandData);
 
     let uploadInput = ["avatar", "photos[]", "banner"];
     let files = await ImageService.upload(req, uploadInput);
 
+    
+
     if (files[0].length) {
-      brandData.avatar = files[0][0].fd;
+      var newArray = new Array();
+      var newArray = files[0][0].fd.split("/");
+      brandData.avatar = domain + newArray[8];
     }
 
     let photos = files[1];
     if (photos.length) {
       for (let i in photos) {
-        photos[i] = photos[i].fd;
+        var newArray = new Array();
+        var newArray = photos[i].fd.split("/");
+        photos[i] = domain + newArray[8];
       }
       brandData.photos = photos;
     }
 
     if (files[2].length) {
-      brandData.banner = files[2][0].fd;
+      var newArray = new Array();
+      var newArray = files[2][0].fd.split("/");
+      brandData.banner = domain + newArray[8];
     }
 
     console.log(brandData);
