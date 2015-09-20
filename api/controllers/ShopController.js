@@ -38,7 +38,7 @@ let ShopController = {
 
       let brands = await db.Brand.findAll();
 
-      console.log('products.length', products.length);
+      console.log('products.length', products);
 
       let dpts = await db.Dpt.findAll({
         include: [{

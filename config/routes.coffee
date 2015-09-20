@@ -28,7 +28,7 @@ etc. depending on your default view engine) your home page.              *
 `assets` directory)                                                      *
 ###
 module.exports.routes = {
-  "/": view: "homepage"
+  "/": 'MainController.index'
   'get /login': 'AuthController.login'
   'get /logout': 'AuthController.logout'
   'get /register' : 'AuthController.register'
@@ -36,7 +36,7 @@ module.exports.routes = {
   'get /admin/' : 'AuthController.admin'
   'get /admin/login' : 'UserController.controlLogin'
   'get /admin/index-exclusive' : 'UserController.indexExclusive'
-  
+
   'get /admin/password' : 'UserController.password'
   'post /admin/password' : 'UserController.password'
   'get /admin/brands' : 'BrandController.list'
@@ -47,7 +47,10 @@ module.exports.routes = {
 
   'get /admin/exclusive' : 'SelectionActiveController.list'
   'post /admin/exclusive' : 'SelectionActiveController.update'
-  'get /admin/index-theme' : view: 'admin/themeActivities'
+
+  'get /admin/topicActivities' : 'TopicActiveController.list'
+  'post /admin/topicActivities' : 'TopicActiveController.save'
+
   'get /admin/index-slider' : 'SliderActivitiesController.list'
 
   'get /admin/slider/create': view: 'admin/sliderActivitiesDetail'
@@ -127,7 +130,7 @@ module.exports.routes = {
   'get /admin/shop-report-form' : 'PromotionController.controlShopReportForm'
   # end promotions
 
-  # client side / Have to login 
+  # client side / Have to login
   'get /member/fav' : view: 'main/member-fav'
   'get /member/purchase' : view: 'main/member-purchase'
   'get /member/setting' : 'UserController.edit'
@@ -140,7 +143,7 @@ module.exports.routes = {
   'get /shop/products' : 'ShopController.list'
 
   'get /shop/products/:productGmid/:productId' : 'ShopController.show'
-  
+
   'get /brands/:id' : 'BrandController.show'
 
   'get /user/cart' : view: 'main/cart'

@@ -10,5 +10,20 @@
     $('.productDptId'+e.data('id')).css("display","block");
   });
 
+  $(".container").on("click", ".item-like, .label-like", function (e) {
+    e.preventDefault();
+    
+    if ( ! window.USER)
+      return $('#modal-login').modal('show');
+
+    // save item to favorite
+    var target = e.currentTarget;
+    
+    if ($(target).hasClass("active"))
+      $(target).removeClass("active");
+    else
+      $(target).addClass("active");
+  });
+
 
 }(jQuery));
