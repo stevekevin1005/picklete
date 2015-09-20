@@ -142,7 +142,14 @@ let FAQController = {
   FAQTypeDelete : async(req,res) => {
     
     try{
-      var FAQDelete = await db.FAQType.destroy({
+
+      var FAQDelete = await db.FAQ.destroy({
+        where: {
+          FAQTypeId :req.body.id
+        }
+      });
+
+      var FAQTypeDelete = await db.FAQType.destroy({
         where: {
           id :req.body.id
         }
