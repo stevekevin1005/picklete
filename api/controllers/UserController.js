@@ -1,9 +1,155 @@
-let userController = {
+
+/**
+ * Authentication Controller
+#
+ * This is merely meant as an example of how your Authentication controller
+ * should look. It currently includes the minimum amount of functionality for
+ * the basics of Passport.js to work.
+ */
+let moment = require("moment");
+
+let UserController = {
+  controlLogin: function(req, res) {
+    if(UserService.getLoginState(req))
+      res.redirect('/admin/goods');
+    else
+      res.view({});
+  },
+  indexSlider: function(req, res) {
+    res.view({
+      pageName: "index-slider"
+    });
+  },
+  indexSliderDetail: function(req, res) {
+    res.view({
+      pageName: "index-slider-detail"
+    });
+  },
+  password: function(req, res) {
+    res.view({
+    });
+  },
+  indexExclusive: function(req, res) {
+    res.view({
+      pageName: "index-exclusive"
+    });
+  },
+  indexTheme: function(req, res) {
+    res.view({
+      pageName: "index-theme"
+    });
+  },
+  controlBrands: function (req, res) {
+    res.view({
+      pageName: "brands"
+    });
+  },
+  controlBrandsDetail: function(req, res) {
+    res.view({
+      pageName: "brands-detail"
+    });
+  },
+  controlShopType: function (req, res) {
+    res.view({
+      pageName: "shop-type"
+    });
+  },
+  controlShopItemAdd: function(req, res) {
+    res.view({
+      pageName: "shop-item-add"
+    });
+  },
+  controlShopDiscount: function(req, res) {
+    res.view({
+      pageName: "shop-discount"
+    });
+  },
+  controlShopDiscountDetail: function(req, res) {
+    res.view({
+      pageName: "shop-discount-detail"
+    });
+  },
+  controlShopDiscountDetail2: function(req, res) {
+    res.view({
+      pageName: "shop-discount-detail2"
+    });
+  },
+  controlShopDiscountAddItem: function(req, res) {
+    res.view({
+      pageName: "shop-discount-add-item"
+    });
+  },
+  controlShopBuyMore: function(req, res) {
+    res.view({
+      pageName: "shop-buy-more"
+    });
+  },
+  controlShopBuyMoreDetail: function(req, res) {
+    res.view({
+      pageName: "shop-buy-more-detail"
+    });
+  },
+  controlShopBuyMoreAddItem: function(req, res) {
+    res.view({
+      pageName: "shop-buy-more-add-item"
+    });
+  },
+  controlShopCode: function(req, res) {
+    res.view({
+      pageName: "shop-code"
+    });
+  },
+  controlShopCodeDetail: function(req, res) {
+    res.view({
+      pageName: "shop-code-detail"
+    });
+  },
+  controlShopReportForm: function(req, res) {
+    res.view({
+      pageName: "shop-report-form"
+    });
+  },
+
+  controlAbout: function(req, res) {
+    res.view({
+      pageName: "about"
+    });
+  },
+  controlQa: function(req, res) {
+    res.view({
+      pageName: "qa"
+    });
+  },
+  controlQaDetail: function(req, res) {
+    res.view({
+      pageName: "qa-detail"
+    });
+  },
+  controlQaType: function(req, res) {
+    res.view({
+      pageName: "qa-type"
+    });
+  },
+  controlQaAdd: function(req, res) {
+    res.view({
+      pageName: "qa-add"
+    });
+  },
+  controlMembers: function(req, res) {
+    res.view({
+      pageName: "members"
+    });
+  },
+  controlMemberDetail: function(req, res) {
+    res.view({
+      pageName: "member-detail"
+    });
+  },
 
   index: async (req, res) => {
     try {
       let users = await UserService.findAll();
-      let roles = await RoleService.findAll();
+      let roles = await UserService.findRoles();
       return res.view({users,roles});
     } catch (error) {
       return res.serverError(error);
@@ -48,7 +194,7 @@ let userController = {
     }
   },
 
-  findAllByRole: async (req, res) => {
+  filterByRole: async (req, res) => {
     try {
       let roleId = req.param("id");
       let users = await UserService.findAllByRole(roleId);
@@ -63,7 +209,7 @@ let userController = {
       let userName = req.param("username");
       let users = await UserService.search(userName);
       // console.log("\n ### find user =>",user);
-      return res.ok({user});
+      return res.ok({users});
     } catch (error) {
       return res.serverError(error);
     }
@@ -169,8 +315,12 @@ let userController = {
     }catch(error){
       return res.serverError(error);
     }
+  },
+
+  orderSync: async (req, res) => {
+
   }
 
 };
 
-module.exports = userController;
+module.exports = UserController;

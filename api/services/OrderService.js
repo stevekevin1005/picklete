@@ -21,65 +21,151 @@ module.exports = {
 
   },
 
+  findAllComplete: async () => {
+    let orders = await db.Order.findAll({
+      include: [
+        {
+          model: db.User
+        }, {
+          model: db.Shipment
+        }, {
+          model: db.OrderItem
+        }
+      ]
+    });
+
+    return orders;
+
+  },
+  findAllByUserComplete: async (userData) => {
+    let orders = await db.Order.findAll({
+      where: {
+        UserId: userData.id
+      },
+      include: [
+        {
+          model: db.User
+        }, {
+          model: db.Shipment
+        }, {
+          model: db.OrderItem
+        }
+      ]
+    });
+
+    return orders;
+
+  },
+
+
+
   create: async (newOrder) => {
-    var result = {
-      product:null
-    };
+    let result = {};
 
     try {
-      // find product.
-      let findProduct = await db.Product.findById(newOrder.product.id);
 
-      if (!findProduct)
-        return res.serverError({msg: '找不到商品！ 請確認商品ID！'});
+      let orderItems = newOrder.orderItems.reduce((result, orderItem) => {
+        if(parseInt(orderItem.quantity) === 0) return result;
 
-      if (findProduct.stockQuantity === 0)
-        return res.serverError({msg: '商品售鑿！'});
+        result.push(orderItem);
 
-      if (findProduct.stockQuantity < newOrder.quantity)
-        return res.serverError({msg: '商品數量不足！'});
+        return result;
+      }, [])
 
+      let products = await* orderItems.map(async (orderItem) => {
+
+        let product = await db.Product.findById(orderItem.ProductId);
+
+        if (!product)
+          throw new Error('找不到商品！ 請確認商品ID！');
+
+        if (product.stockQuantity === 0)
+          throw new Error('商品售鑿！');
+
+        if (product.stockQuantity < orderItem.quantity)
+          throw new Error('商品數量不足！');
+        product.stockQuantity = product.stockQuantity - orderItem.quantity;
+
+        return product;
+      });
+
+      let {user} = newOrder;
+
+      user.address = `${user.zipcode} ${user.city}${user.district}${user.address}`;
 
       let userFindOrCreateResult = await db.User.findOrCreate({
         where: {
-          email: newOrder.user.email
+          email: user.email
         },
-        defaults: newOrder.user
+        defaults: user
       });
 
       let buyer = userFindOrCreateResult[0];
 
       let thisOrder = {
-        quantity: newOrder.quantity,
+        quantity: 0,
         UserId: buyer.id,
-        SerialNumber: await OrderService.generateOrderSerialNumber()
+        paymentTotalAmount:0,
+        serialNumber: await OrderService.generateOrderSerialNumber()
       };
 
+      products.forEach((product, index) => {
+        let quantity = parseInt(orderItems[index].quantity);
+        thisOrder.paymentTotalAmount += (orderItems[index].price * quantity);
+        thisOrder.quantity += quantity;
+
+        orderItems[index].name = product.name;
+        orderItems[index].description = product.description;
+        // orderItems[index].price = product.price;
+        orderItems[index].comment = product.comment;
+        orderItems[index].spec = product.spec;
+      });
+
+      if(thisOrder.quantity == 1)
+        thisOrder.paymentTotalAmount += 90;
+      else
+        thisOrder.paymentTotalAmount += (thisOrder.quantity * 60);
 
 
       let isolationLevel = db.Sequelize.Transaction.ISOLATION_LEVELS.SERIALIZABLE;
       let transaction = await db.sequelize.transaction({isolationLevel});
 
       try {
-        findProduct.stockQuantity = findProduct.stockQuantity - newOrder.quantity
-        await findProduct.save({transaction});
-        let insertOrder = await db.Order.create(thisOrder, {transaction});
-        let insertShipment = await db.Shipment.create(newOrder.shipment, {transaction});
-        let associatedShipment = await insertOrder.setShipment(result.shipment, {transaction});
-        let associatedProduct = await insertOrder.setProduct(result.product, {transaction});
-        let associatedUser = await insertOrder.setUser(result.user, {transaction});
 
-        transaction.commit();
+        let createdOrderItems = await* orderItems.map((orderItem) => db.OrderItem.create(orderItem));
+        await* products.map((product) => product.save({transaction}));
 
-        result.product = findProduct;
-        result.user = buyer;
-        result.order = insertOrder;
-        result.shipment = insertShipment;
+        let createdOrderItemIds = createdOrderItems.map((orderItem) => orderItem.id);
+
+        let {shipment} = newOrder;
+        shipment.address = `${shipment.zipcode} ${shipment.city}${shipment.district}${shipment.address}`;
+
+        let createdOrder = await db.Order.create(thisOrder, {transaction});
+        let createdShipment = await db.Shipment.create(shipment, {transaction});
+
+        let associatedShipment = await createdOrder.setShipment(createdShipment, {transaction});
+        let associatedProduct = await createdOrder.setOrderItems(createdOrderItems, {transaction});
+        let associatedUser = await createdOrder.setUser(buyer, {transaction});
+
+
+        result.products = products;
         result.success = true;
         result.bank = sails.config.bank;
+
+        result.order = createdOrder.toJSON();
+        result.order.OrderItems = createdOrderItems;
+        result.order.User = buyer;
+        result.order.Shipment = createdShipment;
+
+        let messageConfig = CustomMailerService.orderConfirm(result);
+        let message = await db.Message.create(messageConfig, {transaction});
+        transaction.commit();
+
+        await CustomMailerService.sendMail(message);
+
+
       } catch (e) {
         console.error(e.stack);
-        result.success = false;
         transaction.rollback();
         throw e;
       }
@@ -87,8 +173,6 @@ module.exports = {
       return result
 
     } catch (e) {
-      console.error(e.stack);
-
       throw e;
     }
 
@@ -113,8 +197,5 @@ module.exports = {
     let result = `${years}${alphabet[month]}${alphabet[day]}`;
 
     return result;
-
-
-
   }
 }
